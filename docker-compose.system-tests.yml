@@ -1,0 +1,28 @@
+version: '3.2'
+
+services:
+  esquire-backend:
+    build: .
+    ports:
+      - "8000:80" 
+    depends_on: 
+      - db
+    container_name: esq-rest-api
+
+  db:
+    image: "microsoft/mssql-server-linux"
+    environment:
+      SA_PASSWORD: "provide a password here"
+      ACCEPT_EULA: "Y"
+    ports:
+      - "1433:1433"
+    container_name: mssqldev
+
+  esq-rest-tests:
+    image: thoom/pyresttest
+    container_name: esq-rest-tests
+    depends_on: 
+      - esquire-backend
+    volumes:
+      - ./tests/:/tests/
+    command: "http://docker.for.mac.host.internal:8000 esquire-coding-scheme-setup.yaml"

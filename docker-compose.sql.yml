@@ -1,0 +1,17 @@
+version: "3.4"
+
+volumes:
+  esquire-be-db:
+    name: esquire-be-db
+
+services:
+  db:
+    image: "microsoft/mssql-server-linux"
+    environment:
+      SA_PASSWORD: "provide a password here"
+      ACCEPT_EULA: "Y"
+    ports:
+      - "1433:1433"
+    container_name: esquire-be-db
+    volumes:
+      - esquire-be-db:/var/opt/mssql

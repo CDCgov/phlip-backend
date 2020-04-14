@@ -1,0 +1,30 @@
+# Must create Test Project first - done in project-controller-tests
+# Must create ProjectJurisdictions first - done in project-jurisdiction-controller-tests
+# Must create SchemeQuestions first - done in scheme-controller-tests
+
+# Test cases
+#answer question that doesnt exist (returns 404 from controller)
+#answer question that does exist 
+#answer question with answer that doesn't exist
+#answer question with categories
+#answer question with category that doesn't exist
+#answer question with category that does exist but was not selected
+
+
+# GET Test Project and extract id
+- test:
+    - name: "GET 'Test Project' by GET for use in other tests"
+    - variable_binds: {projectName: Test Project}
+    - url: {template: "/api/projects/name/$projectName"}
+    - method: "GET"
+    - headers: {'Content-Type': 'application/json'}   
+    - expected_status: [200]
+    - extract_binds:
+        - 'testProjectId': {'jsonpath_mini': 'id'}
+
+
+
+
+
+
+

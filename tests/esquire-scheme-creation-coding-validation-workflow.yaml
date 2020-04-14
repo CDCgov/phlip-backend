@@ -1,0 +1,526 @@
+# Once backend is launched, tests can be executed via:
+# 	python resttest.py http://localhost:8000 esquire-test.yaml
+
+- config:
+    - testset: "Coding Scheme Setup, Coding, and Validation for Esquire API Testing"
+    - variable_binds: { 
+        'user1': 1, 
+        'user2': 2, 
+        'jurisdiction8': 8, 
+        'jurisdiction1': 1 
+    }
+
+- test:
+    #- delay: 40
+    - name: "Get projects"
+    - url: "/api/projects/"
+
+- test:
+    - name: "Get bookmarked projects"
+    - url: "/api/projects/"
+
+- test: # create Test project by POST
+    - name: "Create project"
+    - variable_binds: {projectName: Test Project}
+    - url: "/api/projects/"
+    - method: "POST"
+    - body: {template: '{"name": "$projectName", "userId": "$user1", "type": 1}'}    
+    - headers: {Content-Type: application/json}
+    - expected_status: [201]
+    - extract_binds:
+        - 'testProjectId': {'jsonpath_mini': 'id'}
+
+- test: # create Project Jurisdiction - jurisdiction 1
+    - name: "Create project jurisdiction"
+    - url: {template: "/api/projects/$testProjectId/jurisdictions/$jurisdiction1"}
+    - method: "POST"
+    - body: {template: '{
+        "startDate": "2018-01-30T15:47:33.336Z",
+        "endDate": "2018-01-30T15:47:33.336Z",
+        "userId": "$user1"
+        }'}
+    - headers: {Content-Type: application/json}
+    - expected_status: [200]
+
+- test: # create Project Jurisdiction - jurisdiction 8
+    - name: "Create project jurisdiction"
+    - url: {template: "/api/projects/$testProjectId/jurisdictions/$jurisdiction8"}
+    - method: "POST"
+    - body: {template: '{
+        "startDate": "2018-01-30T15:47:33.336Z",
+        "endDate": "2018-01-30T15:47:33.336Z",
+        "userId": "$user1"
+        }'}
+    - headers: {Content-Type: application/json}
+    - expected_status: [200]
+      
+- test: # create Coding Scheme entity for Test Project by POST
+    - name: "Create bear coding scheme question for Test Project"
+    - url: {template: "/api/projects/$testProjectId/scheme"}  
+    - method: "POST"
+    - body: {template: '{ "questionType": 4,
+               "text": "What kind of bear is best?",
+               "hint": "",
+               "includeComment": false,
+               "parentId": 0,
+               "positionInParent": 0,
+               "userId": "$user1",
+               "possibleAnswers": [{ "text": "Brown bear" }, { "text": "Black bear" }, { "text": "Polar bear" }],
+                "outline": {}
+              }'}
+    - headers: {Content-Type: application/json-patch+json}
+    - expected_status: [201]
+    - extract_binds:
+        - 'bearQuestionId': {'jsonpath_mini': 'id'}
+        - 'bearAnswerId': {'jsonpath_mini': 'possibleAnswers.0.id'}
+    - validators:  # This is how we do more complex testing!
+        - compare: {jsonpath_mini: 'text', comparator: 'str_eq', expected: 'What kind of bear is best?'}  # JSON extraction
+        - compare: {jsonpath_mini: 'possibleAnswers.0.text', comparator: 'str_eq', expected: 'Brown bear'}  # JSON extraction
+
+- test: # GetCoding Scheme Outline
+    - name: "Get outline for user project"
+    - url: {template: "/api/projects/$testProjectId/scheme"}
+    - method: "GET"
+    - body: "none"
+    - headers: {Content-Type: application/json}
+    - expected_status: [200,201]
+    - extract_binds:
+        - 'currentOutline': {'jmespath': 'outline'}
+  
+- test: # create Coding Scheme entity for Test Project by POST
+    - name: "Create airspeed coding scheme question for Test Project"
+    - url: {template: "/api/projects/$testProjectId/scheme"}  
+    - method: "POST"
+    - body: {template: '{ "questionType": 4,
+               "text": "What is the airspeed velocity of an unladen swallow?",
+               "hint": "",
+               "includeComment": false,
+               "parentId": 0,
+               "positionInParent": 1,
+               "userId": "$user1",
+               "possibleAnswers": [{ "text": "31 - 40 mph" }, { "text": "21 - 30 mph" }, { "text": "41 - 50 mph" }],
+                "outline": $currentOutline
+              }'}
+    - headers: {Content-Type: application/json-patch+json}
+    - expected_status: [200,201]
+    - extract_binds:
+        - 'airspeedQuestionId': {'jsonpath_mini': 'id'}
+        - 'airspeedAnswerId': {'jsonpath_mini': 'possibleAnswers.0.id'}
+    - validators:  # This is how we do more complex testing!
+        - compare: {jsonpath_mini: 'text', comparator: 'str_eq', expected: 'What is the airspeed velocity of an unladen swallow?'}  # JSON extraction
+        - compare: {jsonpath_mini: 'possibleAnswers.0.text', comparator: 'str_eq', expected: '31 - 40 mph'}  # JSON extraction
+
+- test: # GetCoding Scheme Outline
+    - name: "Get outline for user project"
+    - url: {template: "/api/projects/$testProjectId/scheme"}
+    - method: "GET"
+    - body: "none"
+    - headers: {Content-Type: application/json}
+    - expected_status: [200,201]
+    - extract_binds:
+        - 'currentOutline': {'jmespath': 'outline'}
+
+- test: # create Coding Scheme entity for Test Project by POST
+    - name: "Create capital coding scheme question for Test Project"
+    - url: {template: "/api/projects/$testProjectId/scheme"}  
+    - method: "POST"
+    - body: {template: '{ "questionType": 4,
+               "text": "What is the capital of Michigan?",
+               "hint": "",
+               "includeComment": false,
+               "parentId": 0,
+               "positionInParent": 2,
+               "userId": "$user1",
+               "possibleAnswers": [{ "text": "Detroit" }, { "text": "Flint" }, { "text": "Lansing" }],
+                "outline": $currentOutline
+              }'}
+    - headers: {Content-Type: application/json-patch+json}
+    - expected_status: [200,201]
+    - extract_binds:
+        - 'capitalQuestionId': {'jsonpath_mini': 'id'}
+        - 'captialAnswerId': {'jsonpath_mini': 'possibleAnswers.0.id'}
+          
+- test: # GetCoding Scheme Outline
+    - name: "Get outline for user project"
+    - url: {template: "/api/projects/$testProjectId/scheme"}
+    - method: "GET"
+    - body: "none"
+    - headers: {Content-Type: application/json}
+    - expected_status: [200,201]
+    - extract_binds:
+        - 'currentOutline': {'jmespath': 'outline'}
+
+      
+- test: # create Coding Scheme entity for Test Project by POST
+    - name: "Create wings coding scheme for Test Project"
+    - url: {template: "/api/projects/$testProjectId/scheme"}  
+    - method: "POST"
+    - body: {template: '{ "questionType": 4,
+               "text": "What did the Red Wings last win the Stanley Cup?",
+               "hint": "",
+               "includeComment": false,
+               "parentId": 0,
+               "positionInParent": 3,
+               "userId": "$user1",
+               "possibleAnswers": [{ "text": "2011" }, { "text": "2008" }, { "text": "2002" }],
+                "outline": $currentOutline
+              }'}
+    - headers: {Content-Type: application/json-patch+json}
+    - expected_status: [200,201]
+    - extract_binds:
+        - 'wingsQuestionId': {'jsonpath_mini': 'id'}
+        - 'wingsAnswerId': {'jsonpath_mini': 'possibleAnswers.0.id'}
+        
+- test: # GetCoding Scheme Outline
+    - name: "Get outline for user project"
+    - url: {template: "/api/projects/$testProjectId/scheme"}
+    - method: "GET"
+    - body: "none"
+    - headers: {Content-Type: application/json}
+    - expected_status: [200,201]
+    - extract_binds:
+        - 'currentOutline': {'jmespath': 'outline'}
+
+        
+- test: # create Coding Scheme entity for Test Project by POST
+    - name: "Create category parent question for Test Project"
+    - url: {template: "/api/projects/$testProjectId/scheme"}  
+    - method: "POST"
+    - body: {template: '{ "questionType": 2,
+               "text": "What categories apply?",
+               "hint": "",
+               "includeComment": false,
+               "parentId": 0,
+               "positionInParent": 4,
+               "userId": "$user1",
+               "possibleAnswers": [{ "text": "category 1" }, { "text": "category 2" }, { "text": "category 3" }],
+                "outline": $currentOutline
+              }'}
+    - headers: {Content-Type: application/json-patch+json}
+    - expected_status: [200,201]
+    - extract_binds:
+        - 'categoryParentQId': {'jsonpath_mini': 'id'}
+        - 'categoryParentA1Id': {'jsonpath_mini': 'possibleAnswers.0.id'}
+        - 'categoryParentA2Id': {'jsonpath_mini': 'possibleAnswers.1.id'}
+        - 'categoryParentA3Id': {'jsonpath_mini': 'possibleAnswers.2.id'}
+        
+- test: # GetCoding Scheme Outline
+    - name: "Get outline for user project"
+    - url: {template: "/api/projects/$testProjectId/scheme"}
+    - method: "GET"
+    - body: "none"
+    - headers: {Content-Type: application/json}
+    - expected_status: [200,201]
+    - extract_binds:
+        - 'currentOutline': {'jmespath': 'outline'}
+
+
+- test: # create Coding Scheme entity for Test Project by POST
+    - name: "Create category child question for Test Project"
+    - url: {template: "/api/projects/$testProjectId/scheme/"}  
+    - method: "POST"
+    - body: {template: '{ "questionType": 1,
+               "text": "Yes or no?",
+               "hint": "",
+               "isCategoryQuestion":true,
+               "includeComment": false,
+               "parentId": $categoryParentQId,
+               "positionInParent": 1,
+               "userId": "$user1",
+               "possibleAnswers": [{ "text": "yes" }, { "text": "no" }],
+                "outline": $currentOutline
+              }'}
+    - headers: {Content-Type: application/json-patch+json}
+    - expected_status: [200,201]
+    - extract_binds:
+        - 'categoryChild1QId': {'jsonpath_mini': 'id'}
+        - 'categoryChild1A1Id': {'jsonpath_mini': 'possibleAnswers.0.id'}
+        - 'categoryChild1A2Id': {'jsonpath_mini': 'possibleAnswers.1.id'}
+        
+- test: # GetCoding Scheme Outline
+    - name: "Get outline for user project"
+    - url: {template: "/api/projects/$testProjectId/scheme"}
+    - method: "GET"
+    - body: "none"
+    - headers: {Content-Type: application/json}
+    - expected_status: [200,201]
+    - extract_binds:
+        - 'currentOutline': {'jmespath': 'outline'}
+
+
+- test: # create Coding Scheme entity for Test Project by POST
+    - name: "Create a second category child question for Test Project"
+    - url: {template: "/api/projects/$testProjectId/scheme/"}  
+    - method: "POST"
+    - body: {template: '{ "questionType": 3,
+               "text": "Select all that apply",
+               "hint": "",
+               "includeComment": false,
+               "isCategoryQuestion":true,
+               "parentId": $categoryParentQId,
+               "positionInParent": 1,
+               "userId": "$user1",
+               "possibleAnswers": [{ "text": "this one" }, { "text": "that one" }, {"text": "another one"}],
+                "outline": $currentOutline
+              }'}
+    - headers: {Content-Type: application/json-patch+json}
+    - expected_status: [200,201]
+    - extract_binds:
+        - 'categoryChild2QId': {'jsonpath_mini': 'id'}
+        - 'categoryChild2A1Id': {'jsonpath_mini': 'possibleAnswers.0.id'}
+        - 'categoryChild2A2Id': {'jsonpath_mini': 'possibleAnswers.1.id'}
+        - 'categoryChild2A3Id': {'jsonpath_mini': 'possibleAnswers.2.id'}
+
+
+- test: # answer a the bear question for Test Project for jurisdiction 1 with user 1 by POST
+    - name: "Answer the bear question for Test Project for jurisdiction 1 with user 1"
+    - url: {template: "/api/users/$user1/projects/$testProjectId/jurisdictions/$jurisdiction1/codedquestions/$bearQuestionId"}  
+    - method: "POST"
+    - body: {template: 
+    '{
+        "flag": 0,
+        "comment": "string",
+        "codedAnswers": [
+            {
+            "schemeAnswerId": $bearAnswerId,
+            "pincite": "This is why I chose this answer",
+            "textAnswer": ""
+            }
+        ]
+    }'}
+    - headers: {Content-Type: application/json-patch+json}
+    - expected_status: [200,201]
+    - extract_binds:
+      - 'id': {'jsonpath_mini': 'id'}
+      
+- test: # answer a the bear question for Test Project for jurisdiction 8 with user 1 by POST
+    - name: "Answer the bear question for Test Project for jurisdiction 8 with user 1"
+    - url: {template: "/api/users/$user1/projects/$testProjectId/jurisdictions/$jurisdiction8/codedquestions/$bearQuestionId"}  
+    - method: "POST"
+    - body: {template: 
+    '{
+        "flag": 0,
+        "comment": "string",
+        "codedAnswers": [
+            {
+            "schemeAnswerId": $bearAnswerId,
+            "pincite": "This is why I chose this answer",
+            "textAnswer": ""
+            }
+        ]
+    }'}
+    - headers: {Content-Type: application/json-patch+json}
+    - expected_status: [200,201]
+    - extract_binds:
+      - 'id': {'jsonpath_mini': 'id'}
+      
+- test: # answer a the bear question for Test Project for jurisdiction 1 with user 2 by POST
+    - name: "Answer the bear question for Test Project for jurisdiction 1 with user 2"
+    - url: {template: "/api/users/$user2/projects/$testProjectId/jurisdictions/$jurisdiction1/codedquestions/$bearQuestionId"}  
+    - method: "POST"
+    - body: {template: 
+    '{
+        "flag": 0,
+        "comment": "string",
+        "codedAnswers": [
+            {
+            "schemeAnswerId": $bearAnswerId,
+            "pincite": "This is why I chose this answer",
+            "textAnswer": ""
+            }
+        ]
+    }'}
+    - headers: {Content-Type: application/json-patch+json}
+    - expected_status: [200,201]
+    - extract_binds:
+      - 'id': {'jsonpath_mini': 'id'}
+      
+- test: # answer a the bear question for Test Project for jurisdiction 8 with user 2 by POST
+    - name: "Answer the bear question for Test Project for jurisdiction 8 with user 2"
+    - url: {template: "/api/users/$user2/projects/$testProjectId/jurisdictions/$jurisdiction8/codedquestions/$bearQuestionId"}  
+    - method: "POST"
+    - body: {template: 
+    '{
+        "flag": 0,
+        "comment": "string",
+        "codedAnswers": [
+            {
+            "schemeAnswerId": $bearAnswerId,
+            "pincite": "This is why I chose this answer",
+            "textAnswer": ""
+            }
+        ]
+    }'}
+    - headers: {Content-Type: application/json-patch+json}
+    - expected_status: [200,201]
+    - extract_binds:
+      - 'id': {'jsonpath_mini': 'id'}
+      
+- test: # answer the category parent question for Test Project for jurisdiction 1 with user 1 by POST
+    - name: "Answer the category parent question for Test Project for jurisdiction 1 with user 1"
+    - url: {template: "/api/users/$user1/projects/$testProjectId/jurisdictions/$jurisdiction1/codedquestions/$categoryParentQId"}  
+    - method: "POST"
+    - body: {template: 
+    '{
+        "flag": 0,
+        "comment": "string",
+        "codedAnswers": [
+            {
+            "schemeAnswerId": $categoryParentA1Id,
+            "pincite": "This is why I chose this answer",
+            "textAnswer": ""
+            },
+            {
+            "schemeAnswerId": $categoryParentA2Id,
+            "pincite": "This is why I chose this answer",
+            "textAnswer": ""
+            },
+            {
+            "schemeAnswerId": $categoryParentA3Id,
+            "pincite": "This is why I chose this answer",
+            "textAnswer": ""
+            },
+        ]
+    }'}
+    - headers: {Content-Type: application/json-patch+json}
+    - expected_status: [200,201]
+    - extract_binds:
+      - 'id': {'jsonpath_mini': 'id'}
+      
+- test: # answer the category parent question for Test Project for jurisdiction 8 with user 1 by POST
+    - name: "Answer the category parent question for Test Project for jurisdiction 8 with user 1"
+    - url: {template: "/api/users/$user1/projects/$testProjectId/jurisdictions/$jurisdiction8/codedquestions/$categoryParentQId"}  
+    - method: "POST"
+    - body: {template: 
+    '{
+        "flag": 0,
+        "comment": "string",
+        "codedAnswers": [
+            {
+            "schemeAnswerId": $categoryParentA2Id,
+            "pincite": "This is why I chose this answer",
+            "textAnswer": ""
+            },
+            {
+            "schemeAnswerId": $categoryParentA3Id,
+            "pincite": "This is why I chose this answer",
+            "textAnswer": ""
+            },
+        ]
+    }'}
+    - headers: {Content-Type: application/json-patch+json}
+    - expected_status: [200,201]
+    - extract_binds:
+      - 'id': {'jsonpath_mini': 'id'}
+      
+- test: # answer the category parent question for Test Project for jurisdiction 1 with user 2 by POST
+    - name: "Answer the category parent question for Test Project for jurisdiction 1 with user 2"
+    - url: {template: "/api/users/$user2/projects/$testProjectId/jurisdictions/$jurisdiction1/codedquestions/$categoryParentQId"}  
+    - method: "POST"
+    - body: {template: 
+    '{
+        "flag": 0,
+        "comment": "string",
+        "codedAnswers": [
+            {
+            "schemeAnswerId": $categoryParentA1Id,
+            "pincite": "This is why I chose this answer",
+            "textAnswer": ""
+            },
+            {
+            "schemeAnswerId": $categoryParentA3Id,
+            "pincite": "This is why I chose this answer",
+            "textAnswer": ""
+            },
+        ]
+    }'}
+    - headers: {Content-Type: application/json-patch+json}
+    - expected_status: [200,201]
+    - extract_binds:
+      - 'id': {'jsonpath_mini': 'id'}
+      
+- test: # answer the category parent question for Test Project for jurisdiction 8 with user 2 by POST
+    - name: "Answer the category parent question for Test Project for jurisdiction 8 with user 2"
+    - url: {template: "/api/users/$user2/projects/$testProjectId/jurisdictions/$jurisdiction8/codedquestions/$categoryParentQId"}  
+    - method: "POST"
+    - body: {template: 
+    '{
+        "flag": 0,
+        "comment": "string",
+        "codedAnswers": [
+            {
+            "schemeAnswerId": $categoryParentA2Id,
+            "pincite": "This is why I chose this answer",
+            "textAnswer": ""
+            },
+            {
+            "schemeAnswerId": $categoryParentA3Id,
+            "pincite": "This is why I chose this answer",
+            "textAnswer": ""
+            },
+        ]
+    }'}
+    - headers: {Content-Type: application/json-patch+json}
+    - expected_status: [200,201]
+    - extract_binds:
+      - 'id': {'jsonpath_mini': 'id'}
+      
+- test: # answer a the first category child question for Test Project for jurisdiction 1 with user 1 for category 1, 2, and 3 by POST
+    - name: "Answer the first category child question for Test Project for jurisdiction 1 with user 1"
+    - url: {template: "/api/users/$user1/projects/$testProjectId/jurisdictions/$jurisdiction1/codedquestions/$categoryChild1QId/"}  
+    - method: "POST"
+    - body: {template: 
+    '{
+        "flag": 0,
+        "comment": "string",
+        "codedAnswers": [
+            {
+            "schemeAnswerId": $categoryChild1A1Id,
+            "pincite": "This is why I chose this answer",
+            "textAnswer": ""
+            },
+        ],
+        "categories":[$categoryParentA1Id, $categoryParentA12Id, $categoryParentA3Id]
+    }'}
+    - headers: {Content-Type: application/json-patch+json}
+    - expected_status: [200]
+    - extract_binds:
+      - 'id': {'jsonpath_mini': 'id'}
+
+- test: # answer a the first category child question for Test Project for jurisdiction 8 with user 1 for category 2 and 3 by POST
+    - name: "Answer the first category child question for Test Project for jurisdiction 8 with user 1"
+    - url: {template: "/api/users/$user1/projects/$testProjectId/jurisdictions/$jurisdiction8/codedquestions/$categoryChild1QId/"}  
+    - method: "POST"
+    - body: {template: 
+    '{
+        "flag": 0,
+        "comment": "string",
+        "codedAnswers": [
+            {
+            "schemeAnswerId": $categoryChild1A1Id,
+            "pincite": "This is why I chose this answer",
+            "textAnswer": ""
+            },
+        ],
+        "categories":[$categoryParentA2Id, $categoryParentA3Id]
+    }'}
+    - headers: {Content-Type: application/json-patch+json}
+    - expected_status: [200,201]
+    - extract_binds:
+      - 'id': {'jsonpath_mini': 'id'}
+      
+- test: # GET all coders for a project
+    - name: "GET all coders for a project"
+    - url: {template: "/api/projects/$testProjectId/coders"}  
+    - method: "GET"
+    - expected_status: [200]
+    - validators:  # This is how we do more complex testing!
+            - compare: {jsonpath_mini: '.', comparator: 'count_eq', expected: 2}
+            - compare: {jsonpath_mini: '0.firstName', comparator: 'str_eq', expected: 'Admin'}  # JSON extraction
+            - compare: {jsonpath_mini: '0.lastName', comparator: 'str_eq', expected: ''}  # JSON extraction
+            - compare: {jsonpath_mini: '0.userId', comparator: 'eq', expected: 1}  # JSON extraction
+            - compare: {jsonpath_mini: '1.firstName', comparator: 'str_eq', expected: 'Test'}  # JSON extraction
+            - compare: {jsonpath_mini: '1.lastName', comparator: 'str_eq', expected: 'er'}  # JSON extraction
+            - compare: {jsonpath_mini: '1.userId', comparator: 'eq', expected: 2}  # JSON extraction
+
+

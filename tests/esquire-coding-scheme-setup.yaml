@@ -1,0 +1,213 @@
+# Once backend is launched, tests can be executed via:
+# 	python resttest.py http://localhost:8000 esquire-test.yaml
+
+- config:
+    - testset: "Coding Scheme Setup for Esquire API Testing"
+    - variable_binds: { 'user1': 1, 'jurisdiction1': 8 }
+
+- test:
+    - delay: 40
+    - name: "Get projects"
+    - url: "/api/projects/"
+
+- test:
+    - name: "Get bookmarked projects"
+    - url: "/api/projects/"
+
+- test: # create Project Blue entity by POST
+    - name: "Create project"
+    - url: "/api/projects/"
+    - method: "POST"
+    - body: {template: '{"name": "Project Blue", "userId": "$user1" ,"type": "1"}'}
+    - headers: {Content-Type: application/json}
+    - expected_status: [200,201]
+    - extract_binds:
+        - 'projectBlueId': {'jsonpath_mini': 'id'}
+
+- test: # create Project Red entity by POST
+    - name: "Create project"
+    - url: "/api/projects/"
+    - method: "POST"
+    - body: {template: '{"name":"Project Red", "userId": "$user1", "type": "1"}'}
+    - headers: {Content-Type: application/json}
+    - expected_status: [200,201]
+    - extract_binds:
+        - 'projectRedId': {'jsonpath_mini': 'id'}
+
+- test: # create Project Yellow eentity by POST
+    - name: "Create project"
+    - url: "/api/projects/"
+    - method: "POST"
+    - body: {template: '{"name":"Project Yellow", "userId": "$user1" ,"type": "1"}'}
+    - headers: {Content-Type: application/json}
+    - expected_status: [200,201]
+    - extract_binds:
+        - 'projectYellowId': {'jsonpath_mini': 'id'}
+
+- test: # create Project Orange entity by POST
+    - name: "Create project"
+    - url: "/api/projects/"
+    - method: "POST"
+    - body: {template: '{"name":"Project Orange", "userId": "$user1" ,"type": "1"}'}
+    - headers: {Content-Type: application/json}
+    - expected_status: [200,201]
+    - extract_binds:
+        - 'projectOrangeId': {'jsonpath_mini': 'id'}
+
+- test: # create Project Jurisdiction
+    - name: "Create project jurisdiction"
+    - url: {template: "/api/projects/$projectBlueId/jurisdictions/$jurisdiction1"}
+    - method: "POST"
+    - body: {template: '{
+        "startDate": "2018-01-30T15:47:33.336Z",
+        "endDate": "2018-01-30T15:47:33.336Z",
+        "userId": "$user1"
+        }'}
+    - headers: {Content-Type: application/json}
+    - expected_status: [200,201]
+
+
+- test: # create User Project Jurisdiction
+    - name: "Create user project jurisdiction"
+    - url: {template: "/api/users/$user1/projects/$projectBlueId/jurisdictions/$jurisdiction1"}
+    - method: "POST"
+    - body: "none"
+    - headers: {Content-Type: application/json}
+    - expected_status: [200,201]
+
+- test: # create Coding Scheme entity for Project Blue by POST
+    - name: "Create bear coding scheme question for Project Blue"
+    - url: {template: "/api/projects/$projectBlueId/scheme"}  
+    - method: "POST"
+    - body: {template: '{ "questionType": 4,
+               "text": "What kind of bear is best?",
+               "hint": "",
+               "includeComment": false,
+               "parentId": 0,
+               "positionInParent": 0,
+               "userId": "$user1",
+               "possibleAnswers": [{ "text": "Brown bear" }, { "text": "Black bear" }, { "text": "Polar bear" }],
+                "outline": {}
+              }'}
+    - headers: {Content-Type: application/json-patch+json}
+    - expected_status: [200,201]
+    - extract_binds:
+        - 'bearQuestionId': {'jsonpath_mini': 'id'}
+        - 'bearAnswerId': {'jsonpath_mini': 'possibleAnswers.0.id'}
+    - validators:  # This is how we do more complex testing!
+        - compare: {jsonpath_mini: 'text', comparator: 'str_eq', expected: 'What kind of bear is best?'}  # JSON extraction
+        - compare: {jsonpath_mini: 'possibleAnswers.0.text', comparator: 'str_eq', expected: 'Brown bear'}  # JSON extraction
+
+- test: # GetCoding Scheme Outline
+    - name: "Get outline for user project"
+    - url: {template: "/api/projects/$projectBlueId/scheme"}
+    - method: "GET"
+    - body: "none"
+    - headers: {Content-Type: application/json}
+    - expected_status: [200,201]
+    - extract_binds:
+        - 'currentOutline': {'jmespath': 'outline'}
+
+- test: # create Coding Scheme entity for Project Blue by POST
+    - name: "Create airspeed coding scheme question for Project Blue"
+    - url: {template: "/api/projects/$projectBlueId/scheme"}  
+    - method: "POST"
+    - body: {template: '{ "questionType": 4,
+               "text": "What is the airspeed velocity of an unladen swallow?",
+               "hint": "",
+               "includeComment": false,
+               "parentId": 0,
+               "positionInParent": 0,
+               "userId": "$user1",
+               "possibleAnswers": [{ "text": "31 - 40 mph" }, { "text": "21 - 30 mph" }, { "text": "41 - 50 mph" }],
+                "outline": {}
+              }'}
+    - headers: {Content-Type: application/json-patch+json}
+    - expected_status: [200,201]
+    - extract_binds:
+        - 'airspeedQuestionId': {'jsonpath_mini': 'id'}
+        - 'airspeedAnswerId': {'jsonpath_mini': 'possibleAnswers.0.id'}
+    - validators:  # This is how we do more complex testing!
+        - compare: {jsonpath_mini: 'text', comparator: 'str_eq', expected: 'What is the airspeed velocity of an unladen swallow?'}  # JSON extraction
+        - compare: {jsonpath_mini: 'possibleAnswers.0.text', comparator: 'str_eq', expected: '31 - 40 mph'}  # JSON extraction
+
+- test: # GetCoding Scheme Outline
+    - name: "Get outline for user project"
+    - url: {template: "/api/projects/$projectBlueId/scheme"}
+    - method: "GET"
+    - body: "none"
+    - headers: {Content-Type: application/json}
+    - expected_status: [200,201]
+    - extract_binds:
+        - 'currentOutline': {'jmespath': 'outline'}
+
+- test: # create Coding Scheme entity for Project Blue by POST
+    - name: "Create capital coding scheme question for Project Blue"
+    - url: {template: "/api/projects/$projectBlueId/scheme"}  
+    - method: "POST"
+    - body: {template: '{ "questionType": 4,
+               "text": "What is the capital of Michigan?",
+               "hint": "",
+               "includeComment": false,
+               "parentId": 0,
+               "positionInParent": 0,
+               "userId": "$user1",
+               "possibleAnswers": [{ "text": "Detroit" }, { "text": "Flint" }, { "text": "Lansing" }],
+                "outline": {}
+              }'}
+    - headers: {Content-Type: application/json-patch+json}
+    - expected_status: [200,201]
+    - extract_binds:
+        - 'capitalQuestionId': {'jsonpath_mini': 'id'}
+        - 'captialAnswerId': {'jsonpath_mini': 'possibleAnswers.0.id'}
+
+- test: # GetCoding Scheme Outline
+    - name: "Get outline for user project"
+    - url: {template: "/api/projects/$projectBlueId/scheme"}
+    - method: "GET"
+    - body: "none"
+    - headers: {Content-Type: application/json}
+    - expected_status: [200,201]
+    - extract_binds:
+        - 'currentOutline': {'jmespath': 'outline'}
+
+
+- test: # create Coding Scheme entity for Project Blue by POST
+    - name: "Create wings coding scheme for Project Blue"
+    - url: {template: "/api/projects/$projectBlueId/scheme"}  
+    - method: "POST"
+    - body: {template: '{ "questionType": 4,
+               "text": "What did the Red Wings last win the Stanley Cup?",
+               "hint": "",
+               "includeComment": false,
+               "parentId": 0,
+               "positionInParent": 0,
+               "userId": "$user1",
+               "possibleAnswers": [{ "text": "2011" }, { "text": "2008" }, { "text": "2002" }],
+                "outline": {}
+              }'}
+    - headers: {Content-Type: application/json-patch+json}
+    - expected_status: [200,201]
+    - extract_binds:
+        - 'wingsQuestionId': {'jsonpath_mini': 'id'}
+        - 'wingsAnswerId': {'jsonpath_mini': 'possibleAnswers.0.id'}
+
+- test: # answer a the bear question for Project Blue by POST
+    - name: "Answer the bear question for Project Blue"
+    - url: {template: "/api/users/$user1/projects/$projectBlueId/jurisdictions/$jurisdiction1/codedquestions/$bearQuestionId"}  
+    - method: "POST"
+    - body: {template: 
+    '{
+        "flag": 0,
+        "comment": "string",
+        "codedAnswers": [
+            {
+            "schemeAnswerId": $bearAnswerId,
+            "pincite": "This is why I chose this answer",
+            "textAnswer": ""
+            }
+        ]
+    }'}
+    - headers: {Content-Type: application/json-patch+json}
+    - expected_status: [200,201]
+

@@ -1,0 +1,36 @@
+# Once backend is launched, tests can be executed via:
+# 	python resttest.py http://localhost:8000 esquire-test.yaml
+---
+- config:
+    - testset: "Basic API test for Esquire"
+
+- test:
+    - name: "Get projects"
+    - url: "/api/projects/"
+
+- test:
+    - name: "Get bookmarked projects"
+    - url: "/api/projects/"
+
+- test: # create entity by POST
+    - name: "Create project"
+    - url: "/api/projects/"
+    - method: "POST"
+    - body: '{"name":"Project pyresttest","userId": "1","type": "1"}'
+    - headers: {Content-Type: application/json}
+    - expected_status: [200,201]
+    - extract_binds:
+      - 'id': {'jsonpath_mini': 'id'}
+
+- test:
+    - name: "Get project just created and validate"
+    - url: {'template': "/api/projects/$id/"}
+    - validators:
+        - compare: {jsonpath_mini: 'id', comparator: 'str_eq', expected: {template: '$id'}}
+        - extract_test: {jsonpath_mini: 'name', test: 'exists'}
+
+- test:
+    - name: "Delete project just created"
+    - url: {'template': "/api/projects/$id/"}
+    - method: "DELETE"
+

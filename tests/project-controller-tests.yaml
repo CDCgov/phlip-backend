@@ -1,0 +1,95 @@
+# Once backend is launched, tests can be executed via:
+# 	python resttest.py http://localhost:8000 esquire-test.yaml
+---
+- config:
+    - testset: "Coding Scheme Setup for Esquire API Testing"
+    - variable_binds: { 'user1': 1, 'jurisdiction1': 8 }
+    
+- test:
+    - name: "Get projects"
+    - url: "/api/projects/"
+    
+- test: # Get Project known to not exist
+    - name: "Create project"
+    - url: "/api/projects/0"
+    - method: "GET"
+    - headers: {Content-Type: application/json}
+    - expected_status: [404]
+    
+- test:
+    - name: "attempt to create 'Test Project' by POST with invalid user"
+    - variable_binds: {projectName: Test Project, userId: 0}
+    - url: "/api/projects/"
+    - method: "POST"
+    - headers: {'Content-Type': 'application/json'}
+    - body: {template: '{"name": "$projectName", "userId": "$userId", "type": 1}'}    
+    - expected_status: [401]
+    
+- test:
+    - name: "attempt to create 'Test Project' with type 0 (invalid) by POST"
+    - variable_binds: {projectName: Test Project, userId: 1, type: 0}
+    - url: "/api/projects/"
+    - method: "POST"
+    - headers: {'Content-Type': 'application/json'}
+    - body: {template: '{"name": "$projectName", "userId": "$userId", "type": "$type"}'}    
+    - expected_status: [400]
+    
+- test:
+    - name: "attempt to create 'Test Project' with type 3 (invalid) by POST"
+    - variable_binds: {projectName: Test Project, userId: 1, type: 3}
+    - url: "/api/projects/"
+    - method: "POST"
+    - headers: {'Content-Type': 'application/json'}
+    - body: {template: '{"name": "$projectName", "userId": "$userId", "type": "$type"}'}    
+    - expected_status: [400]
+    
+- test:
+    - name: "Create 'Test Project' by POST"
+    - variable_binds: {projectName: Test Project, userId: 1}
+    - url: "/api/projects/"
+    - method: "POST"
+    - headers: {'Content-Type': 'application/json'}
+    - body: {template: '{"name": "$projectName", "userId": "$userId", "type": 1}'}    
+    - expected_status: [201]
+    - extract_binds:
+        - 'testProjectId': {'jsonpath_mini': 'id'}
+    
+- test:
+    - name: "Create duplicate 'Test Project' by POST"
+    - variable_binds: {projectName: Test Project, userId: 1}
+    - url: "/api/projects/"
+    - method: "POST"
+    - headers: {'Content-Type': 'application/json'}
+    - body: {template: '{"name": "$projectName", "userId": "$userId", "type": 1}'}    
+    - expected_status: [400]
+
+- test:
+    - name: "Delete 'Test Project' by DELETE"
+    - variable_binds: {projectName: Test Project, userId: 1}
+    - url: {'template': "/api/projects/$testProjectId/"}
+    - method: "DELETE"
+    - headers: {'Content-Type': 'application/json'}
+    - expected_status: [204]
+    
+- test:
+    - name: "attempt to delete 'Test Project' (doesn't exist anymore) by DELETE"
+    - variable_binds: {projectName: Test Project, userId: 1}
+    - url: {'template': "/api/projects/$testProjectId/"}
+    - method: "DELETE"
+    - headers: {'Content-Type': 'application/json'}
+    - expected_status: [404]
+    
+- test:
+    - name: "Recreate 'Test Project' by POST for use in other tests"
+    - variable_binds: {projectName: Test Project, userId: 1}
+    - url: "/api/projects/"
+    - method: "POST"
+    - headers: {'Content-Type': 'application/json'}
+    - body: {template: '{"name": "$projectName", "userId": "$userId", "type": 1}'}    
+    - expected_status: [201]
+    - extract_binds:
+        - 'testProjectId': {'jsonpath_mini': 'id'}
+    
+    
+        
+
