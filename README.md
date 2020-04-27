@@ -32,6 +32,10 @@ Use the command below to run migrations on the SQL Server.
 ```bash
 $ dotnet ef database update
 ```
+(You may get an error about ef not being available/recognized, if that happens, run the following to install the ef tool:)
+```bash
+$dotnet tool install --global dotnet-ef
+```
 
 ### Starting the API server
 Use the command below to start the API server on port 8000.
